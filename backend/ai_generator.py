@@ -83,8 +83,11 @@ Provide only the direct answer to what was asked.
         if response.stop_reason == "tool_use" and tool_manager:
             return self._handle_tool_execution(response, api_params, tool_manager)
         
-        # Return direct response
-        return response.content[0].text
+        # Return direct response (skip thinking blocks)
+        for block in response.content:
+            if block.type == "text":
+                return block.text
+        return ""
     
     def _handle_tool_execution(self, initial_response, base_params: Dict[str, Any], tool_manager):
         """
@@ -130,6 +133,9 @@ Provide only the direct answer to what was asked.
             "system": base_params["system"]
         }
         
-        # Get final response
+        # Get final response (skip thinking blocks)
         final_response = self.client.messages.create(**final_params)
-        return final_response.content[0].text
+        for block in final_response.content:
+            if block.type == "text":
+                return block.text
+        return ""

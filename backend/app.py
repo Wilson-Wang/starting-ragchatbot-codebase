@@ -40,16 +40,25 @@ class QueryRequest(BaseModel):
     query: str
     session_id: Optional[str] = None
 
+class SourceItem(BaseModel):
+    """A source with text and optional URL"""
+    text: str
+    url: Optional[str] = None
+
 class QueryResponse(BaseModel):
     """Response model for course queries"""
     answer: str
-    sources: List[str]
+    sources: List[SourceItem]
     session_id: str
 
 class CourseStats(BaseModel):
     """Response model for course statistics"""
     total_courses: int
     course_titles: List[str]
+
+class SessionResponse(BaseModel):
+    """Response model for session operations"""
+    success: bool
 
 # API Endpoints
 
@@ -84,6 +93,12 @@ async def get_course_stats():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/session/{session_id}", response_model=SessionResponse)
+async def clear_session(session_id: str):
+    """Clear a conversation session"""
+    rag_system.session_manager.clear_session(session_id)
+    return SessionResponse(success=True)
 
 @app.on_event("startup")
 async def startup_event():
